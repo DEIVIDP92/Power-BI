@@ -1,0 +1,45 @@
+let 
+            //Identificar fecha de hoy
+            Today = DateTime.Date(DateTime.LocalNow()),
+            //Devuelve el primero de enero del año correspondiente a la fecha mínima (Se le restan 2 años para empezar en 2010)
+            MinDate = #date(2023, 1, 1), 
+            //Devuelve el treinta y uno de diciembre del año correspondiente a la fecha máxima (Se le suman 3 años para tener siempre tres años por delante de la última fecha) 
+            MaxDate = Date.AddYears(Date.EndOfYear(Today), 1),
+            //Calcula la diferencia en días de la fecha máxima con respecto a la fecha mínima y se le suma 1 para que siempre cuente el 31/12/ÚltimoAño 
+            Duration = Duration.Days(Duration.From(MaxDate - MinDate)) + 1,
+            //Crea una lista con las fechas desde MinDate hasta MaxDate aumentando día a día 
+            Date = List.Dates(MinDate, Duration, #duration (1,0,0,0)),
+            //Convierte la lista en una tabla (La base del calendario)
+            #"Converted to Table" = Table.FromList(Date, Splitter.SplitByNothing(), null, null, ExtraValues.Error), 
+            #"Renamed Columns" = Table.RenameColumns(#"Converted to Table",{{"Column1", "Date"}}),
+            #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Date", type date}}),
+            //Agregar columna Año
+            Year = Table.AddColumn(#"Changed Type", "Year", each Date.Year([Date]), Int64.Type),
+            //Agregar columna Semestre
+            //SemestreColumna = Table.AddColumn(Year, "Semestre", each "S" & Text.From(Number.RoundUp(Date.Month([Date]) / 6, 0)), type text),
+            //Agregar columna Cuatrimestre
+            //CuatrimestreColumna = Table.AddColumn(SemestreColumna, "Cuatrimestre", each "Q" & Text.From(Number.RoundUp(Date.Month([Date]) / 4, 0)), type text),
+            //Agrear columna AñoMes
+            YearMonth = Table.AddColumn(Year, "Year Month", each Date.ToText([Date], "yyyyMM"), type text),
+            //Agregar columna NumMes
+            MonthNumber = Table.AddColumn(YearMonth, "Month Number", each Date.Month([Date]), Int64.Type),
+            //Agregar columna Mes
+            Month = Table.AddColumn(MonthNumber, "Month", each Date.MonthName([Date], "en-US"), type text),
+            //Agregar columna NumSemana
+            //NumSemana = Table.AddColumn(MesColumna, "NumSemana", each Date.WeekOfYear([Date]), Int64.Type),
+            //Agregar columna NumDía
+            //NumDía = Table.AddColumn(NumSemana, "NumDía", each Date.DayOfWeek([Date]) + 1, Int64.Type),
+            //Agregar columna Día
+            //Día = Table.AddColumn(NumDía, "Día", each Date.DayOfWeekName([Date]), type text),
+            //Agregar festivos
+            //Combinar Calendario con tabla de festivos nacionales
+            //CombinarConsultas = Table.NestedJoin(Día, {"Date"}, #"FestivosNacionales", {"Date"}, "DíasFestivos", JoinKind.LeftOuter),
+            //Expandir festivos nacionales
+            //Festivos = Table.ExpandTableColumn(CombinarConsultas, "DíasFestivos", {"Festivo"}, {"Festivo"}),
+            //Identificador de días laborables
+            //Laborable = Table.AddColumn(Festivos, "Laborable", each if [Festivo] <> null or [NumDía] >= 6 then 0 else 1, Int64.Type),
+            //Identificador del año actual
+            CurrentYear = Table.AddColumn(Month, "Current Year", each if [Year] = Date.Year(DateTime.LocalNow()) then 1 else 0, Int64.Type),
+    #"Changed Type1" = Table.TransformColumnTypes(CurrentYear,{{"Year Month", Int64.Type}, {"Date", type date}})
+in
+    #"Changed Type1"
