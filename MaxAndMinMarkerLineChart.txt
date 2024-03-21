@@ -1,0 +1,14 @@
+// source: https://powerbidocs.com/2021/03/10/highlighting-the-min-max-values-in-a-power-bi-line-chart/
+MAX Sales =
+VAR GetAllMarket = ALLSELECTED(Orders[Market])
+VAR GetMaxValue= MAXX(GetAllMarket, CALCULATE(SUM(Orders[Sales])))
+RETURN
+IF(SUM(Orders[Sales]) = GetMaxValue, GetMaxValue, Blank())
+
+
+
+MIN Sales =
+VAR GetAllMarket = ALLSELECTED(Orders[Market])
+VAR GetMinValue= MINX(GetAllMarket, CALCULATE(SUM(Orders[Sales])))
+RETURN
+IF(SUM(Orders[Sales]) = GetMinValue, GetMinValue, Blank())
