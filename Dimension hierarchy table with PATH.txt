@@ -1,0 +1,17 @@
+First you will need to have at least 3 columns:
+
+HierarchyId, HierarchyIdHi and/or DimensionName
+
+Then it is needed to create a Column Path with this below code:
+
+DimensionPath = PATH(DimensionTable[HierarchyId], DimensionTable[HierarchyIdHi])
+
+Then you'll be creating some other columns in order to
+
+HierarchyLevel1 = 
+VAR LevelNumber = 1
+VAR LevelKey = PATHITEM ( DimensionTable[DimensionPath], LevelNumber, INTEGER )
+VAR LevelName = LOOKUPVALUE ( DimensionTable[DimensionName], DimensionTable[HierarchyId], LevelKey )
+VAR Result = LevelName
+RETURN
+    Result
