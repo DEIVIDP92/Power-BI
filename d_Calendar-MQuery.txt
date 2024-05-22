@@ -20,7 +20,7 @@ let
     //Changes the data type of the Date column to date
     #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Date", type date}}),
     //Adds a Year column
-    Year = Table.AddColumn(#"Changed Type", "Year", each Date.Year([Date]), Int64.Type),
+    Year = Table.AddColumn(#"Changed Type", "Year", each Date.Year([Date]),type text),
     //Adds a Semester column
     SemesterColumn = Table.AddColumn(Year, "Semester", each "S" & Text.From(Number.RoundUp(Date.Month([Date]) / 6, 0)), type text),
     //Adds a Quarter column
@@ -28,9 +28,9 @@ let
     //Adds a YearMonth column
     YearMonth = Table.AddColumn(Year, "Year Month", each Date.ToText([Date], "yyyyMM"), type text),
     //Adds a Month Number column
-    MonthNumber = Table.AddColumn(YearMonth, "Month Number", each Date.Month([Date]), Int64.Type),
+    MonthNumber = Table.AddColumn(YearMonth, "MonthNum", each Date.Month([Date]), Int64.Type),
     //Adds a Month column
-    Month = Table.AddColumn(MonthNumber, "Month", each Date.MonthName([Date], "en-US"), type text),
+    MonthColumn = Table.AddColumn(MonthNumber, "Month", each Date.MonthName([Date], "en-UK"), type text),
     //Adds a Week Number column
     WeekNumber = Table.AddColumn(MonthColumn, "Week Number", each Date.WeekOfYear([Date]), Int64.Type),
     //Adds a Day Number column
@@ -39,11 +39,13 @@ let
     Day = Table.AddColumn(DayNumber, "Day", each Date.DayOfWeekName([Date]), type text),
     
     //Current year identifier
-    CurrentYear = Table.AddColumn(Month, "Current Year", each if [Year] = Date.Year(DateTime.LocalNow()) then 1 else 0, Int64.Type),
+    CurrentYear = Table.AddColumn(Day, "Current Year", each if [Year] = Date.Year(DateTime.LocalNow()) then 1 else 0, Int64.Type),
     
-    #"Changed Type1" = Table.TransformColumnTypes(CurrentYear,{{"Year Month", Int64.Type}, {"Date", type date}})
+    #"Changed Type1" = Table.TransformColumnTypes(CurrentYear,{{"Year Month", Int64.Type}, {"Date", type date}}),
+  MothShorted = Table.AddColumn(#"Changed Type1", "MonthShort", each Text.Start([Month], 3), type text),
+  YearNum = Table.DuplicateColumn(MothShorted, "Year", "YearNum", Int64.Type)
 in
-    #"Changed Type1"
+    YearNum
 
 ----------------------- 
 
