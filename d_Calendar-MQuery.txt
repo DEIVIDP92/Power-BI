@@ -20,32 +20,55 @@ let
     //Changes the data type of the Date column to date
     #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Date", type date}}),
     //Adds a Year column
-    Year = Table.AddColumn(#"Changed Type", "Year", each Date.Year([Date]),type text),
-    //Adds a Semester column
-    SemesterColumn = Table.AddColumn(Year, "Semester", each "S" & Text.From(Number.RoundUp(Date.Month([Date]) / 6, 0)), type text),
-    //Adds a Quarter column
-    QuarterColumn = Table.AddColumn(SemesterColumn, "Quarter", each "Q" & Text.From(Number.RoundUp(Date.Month([Date]) / 4, 0)), type text),
+    Year = Table.AddColumn(#"Changed Type", "Year", each Date.Year([Date])),
+    // Adds a Semester column
+    SemesterColumn = Table.AddColumn(Year, "Semester", each "S" & Text.From(Number.RoundUp(Date.Month([Date]) / 6, 0))),
+    // Adds a Semester column but in intenger format
+    SemesterColumnNum = Table.AddColumn(SemesterColumn, "SemesterNum", each Text.From(Number.RoundUp(Date.Month([Date]) / 6, 0))),
+    // Adds a Quarter column
+    QuarterColumn = Table.AddColumn(SemesterColumnNum, "Quarter", each "Q" & Text.From(Number.RoundUp(Date.Month([Date]) / 4, 0))),
+    //Adds a Quarte column in intenger forma
+    QuarterColumnNum = Table.AddColumn(QuarterColumn, "QuarterNum", each Text.From(Number.RoundUp(Date.Month([Date]) / 4, 0))),
     //Adds a YearMonth column
-    YearMonth = Table.AddColumn(Year, "Year Month", each Date.ToText([Date], "yyyyMM"), type text),
+    YearMonth = Table.AddColumn(QuarterColumnNum, "YearMonthNum", each Date.ToText([Date], "yyyyMM")),
     //Adds a Month Number column
-    MonthNumber = Table.AddColumn(YearMonth, "MonthNum", each Date.Month([Date]), Int64.Type),
+    MonthNum = Table.AddColumn(YearMonth, "MonthNum", each Date.Month([Date])),
     //Adds a Month column
-    MonthColumn = Table.AddColumn(MonthNumber, "Month", each Date.MonthName([Date], "en-UK"), type text),
+    MonthColumn = Table.AddColumn(MonthNum, "Month", each Date.MonthName([Date], "en-UK")),
     //Adds a Week Number column
-    WeekNumber = Table.AddColumn(MonthColumn, "Week Number", each Date.WeekOfYear([Date]), Int64.Type),
+    WeekNumber = Table.AddColumn(MonthColumn, "WeekNum", each Date.WeekOfYear([Date])),
     //Adds a Day Number column
-    DayNumber = Table.AddColumn(WeekNumber, "Day Number", each Date.DayOfWeek([Date]) + 1, Int64.Type),
+    DayNumber = Table.AddColumn(WeekNumber, "DayNum", each Date.DayOfWeek([Date]) + 1),
     //Adds a Day column
-    Day = Table.AddColumn(DayNumber, "Day", each Date.DayOfWeekName([Date]), type text),
-    
-    //Current year identifier
-    CurrentYear = Table.AddColumn(Day, "Current Year", each if [Year] = Date.Year(DateTime.LocalNow()) then 1 else 0, Int64.Type),
-    
-    #"Changed Type1" = Table.TransformColumnTypes(CurrentYear,{{"Year Month", Int64.Type}, {"Date", type date}}),
-  MothShorted = Table.AddColumn(#"Changed Type1", "MonthShort", each Text.Start([Month], 3), type text),
-  YearNum = Table.DuplicateColumn(MothShorted, "Year", "YearNum", Int64.Type)
+    Day = Table.AddColumn(DayNumber, "Day", each Date.DayOfWeekName([Date])),
+    //Changes all data type to avoid errors when duplicating columns
+    #"Changed Type1" = Table.TransformColumnTypes(Day,{{"Year", type text}, {"Semester", type text}, {"SemesterNum", Int64.Type}, {"Quarter", type text}, {"QuarterNum", Int64.Type}, {"YearMonthNum", Int64.Type}, {"MonthNum", Int64.Type}, {"Month", type text}, {"WeekNum", Int64.Type}, {"DayNum", Int64.Type}, {"Day", type text}}),
+    //Shorten version of Month
+    MothShort = Table.AddColumn(#"Changed Type1", "MonthShort", each Text.Start([Month], 3)),
+    //Shorten version of Day
+    DayShort = Table.AddColumn(MothShort, "DayShort", each Text.Start([Day], 3)),
+    //Shorten version of Year
+    YearShort = Table.AddColumn(DayShort, "YearShort", each Text.End([Year], 2)),
+    //Changes all data type to avoid errors when duplicating columns
+    #"Changed Type3" = Table.TransformColumnTypes(YearShort,{{"MonthShort", type text}, {"DayShort", type text}, {"YearShort", type text}}),
+    //Shorten version of MonthYear
+    MonthYearShort = Table.AddColumn(#"Changed Type3", "MonthYearShort", each Text.Combine({[MonthShort], [YearShort]}, " - "), type text),
+    //YearNum in intenger column
+    YearNum = Table.DuplicateColumn(MonthYearShort, "Year", "YearNum"),
+    //Changes the data type to avoid errors when duplicating columns
+    #"Changed Type2" = Table.TransformColumnTypes(YearNum,{{"YearNum", Int64.Type}}),
+    // Current year identifier
+    CurrentYear = Table.AddColumn(#"Changed Type2", "CurrentYear", each if [Year] = Date.Year(DateTime.LocalNow()) then 1 else 0),
+    // Year to Date identifier
+    YearToDate = Table.AddColumn(CurrentYear, "YearToDate", each if Date.Month([Date]) >= 1 and Date.Month([Date]) <= Date.Month(DateTime.LocalNow()) then 1 else 0 ),
+    // Quarter to Date identifier
+    QuarterToDate = Table.AddColumn(YearToDate, "QuarterToDate", each if Date.QuarterOfYear([Date]) <= Date.QuarterOfYear(DateTime.LocalNow()) then 1 else 0 ),
+    // 12 Months rolling period from today identifier
+    Months12Rolling = Table.AddColumn(QuarterToDate, "12MonthsRolling", each if [Date] >= Date.From(DateTime.LocalNow()) - #duration(365, 0, 0, 0) then 1 else 0),
+    //Changes the previous columns data type
+    #"Changed Type4" = Table.TransformColumnTypes(Months12Rolling,{{"YearToDate", Int64.Type}, {"QuarterToDate", Int64.Type}, {"12MonthsRolling", Int64.Type}, {"CurrentYear", Int64.Type}})
 in
-    YearNum
+    #"Changed Type4"
 
 ----------------------- 
 
