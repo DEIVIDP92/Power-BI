@@ -26,9 +26,9 @@ let
     // Adds a Semester column but in intenger format
     SemesterColumnNum = Table.AddColumn(SemesterColumn, "SemesterNum", each Text.From(Number.RoundUp(Date.Month([Date]) / 6, 0))),
     // Adds a Quarter column
-    QuarterColumn = Table.AddColumn(SemesterColumnNum, "Quarter", each "Q" & Text.From(Number.RoundUp(Date.Month([Date]) / 4, 0))),
+    QuarterColumn = Table.AddColumn(SemesterColumnNum, "Quarter", each "Q" & Text.From(Number.RoundUp(Date.Month([Date]) / 3, 0))),
     //Adds a Quarte column in intenger forma
-    QuarterColumnNum = Table.AddColumn(QuarterColumn, "QuarterNum", each Text.From(Number.RoundUp(Date.Month([Date]) / 4, 0))),
+    QuarterColumnNum = Table.AddColumn(QuarterColumn, "QuarterNum", each Text.From(Number.RoundUp(Date.Month([Date]) / 3, 0))),
     //Adds a YearMonth column
     YearMonth = Table.AddColumn(QuarterColumnNum, "YearMonthNum", each Date.ToText([Date], "yyyyMM")),
     //Adds a Month Number column
