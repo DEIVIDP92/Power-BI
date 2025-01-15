@@ -66,9 +66,13 @@ let
     // 12 Months rolling period from today identifier
     Months12Rolling = Table.AddColumn(QuarterToDate, "12MonthsRolling", each if [Date] >= Date.From(DateTime.LocalNow()) - #duration(365, 0, 0, 0) then 1 else 0),
     //Changes the previous columns data type
-    #"Changed Type4" = Table.TransformColumnTypes(Months12Rolling,{{"YearToDate", Int64.Type}, {"QuarterToDate", Int64.Type}, {"12MonthsRolling", Int64.Type}, {"CurrentYear", Int64.Type}})
+    #"Changed Type4" = Table.TransformColumnTypes(Months12Rolling,{{"YearToDate", Int64.Type}, {"QuarterToDate", Int64.Type}, {"12MonthsRolling", Int64.Type}, {"CurrentYear", Int64.Type}}),
+    //Added End of the Year
+    #"Inserted End of Year" = Table.AddColumn(#"Changed Type4", "YearEnd", each Date.EndOfYear([Date]), type date),
+    //Added Start of the Year
+    #"Inserted Start of Year" = Table.AddColumn(#"Inserted End of Year", "YearStart", each Date.StartOfYear([Date]), type date)
 in
-    #"Changed Type4"
+    #"Inserted Start of Year"
 
 ----------------------- 
 
