@@ -61,13 +61,22 @@ let
     YearToDate = Table.AddColumn(CurrentYear, "YearToDate", each if Date.Month([Date]) >= 1 and Date.Month([Date]) <= Date.Month(DateTime.LocalNow()) then 1 else 0 ),
     // Quarter to Date identifier
     QuarterToDate = Table.AddColumn(YearToDate, "QuarterToDate", each if Date.QuarterOfYear([Date]) <= Date.QuarterOfYear(DateTime.LocalNow()) then 1 else 0 ),
+    // Month to Date identifier
+    MonthToDate = Table.AddColumn(QuarterToDate, "MonthToDate",each 
+    if [Date] >= #date(Date.Year(DateTime.LocalNow()), 2, 1) and [Date] <= Date.From(DateTime.LocalNow()) then 1 else 0),
     // 12 Months rolling period from today identifier
-    Months12Rolling = Table.AddColumn(QuarterToDate, "12MonthsRolling", each if [Date] >= Date.From(DateTime.LocalNow()) - #duration(365, 0, 0, 0) then 1 else 0),
+    //Months12Rolling = Table.AddColumn(QuarterToDate, "12MonthsRolling", each if ([Date] >= (Date.From(DateTime.LocalNow()) - #duration(365, 0, 0, 0)) and [Date] <= Date.From(DateTime.LocalNow()))  then 1 else 0),
+    Months12Rolling = Table.AddColumn(MonthToDate, "12MonthsRolling", each 
+    if ([Date] >= (Date.From(DateTime.LocalNow()) - #duration(365, 0, 0, 0)) and 
+        [Date] <= Date.From(DateTime.LocalNow()) ) then 
+        1 //Rolling 12 Months
+    else if ([Date] >= (Date.From(DateTime.LocalNow()) - #duration(730, 0, 0, 0)) and 
+             [Date] < (Date.From(DateTime.LocalNow()) - #duration(365, 0, 0, 0))) then 
+        2 //Last Year Comparison
+    else 
+        0),
+    #"Duplicated column" = Table.DuplicateColumn(Months12Rolling, "Date", "DateKey"),
     //Changes the previous columns data type
-    #"Changed Type4" = Table.TransformColumnTypes(Months12Rolling,{{"YearToDate", Int64.Type}, {"QuarterToDate", Int64.Type}, {"12MonthsRolling", Int64.Type}, {"CurrentYear", Int64.Type}}),
-    //Added End of the Year
-    #"Inserted End of Year" = Table.AddColumn(#"Changed Type4", "YearEnd", each Date.EndOfYear([Date]), type date),
-    //Added Start of the Year
-    #"Inserted Start of Year" = Table.AddColumn(#"Inserted End of Year", "YearStart", each Date.StartOfYear([Date]), type date)
+    #"Changed Type4" = Table.TransformColumnTypes(#"Duplicated column",{{"YearToDate", Int64.Type}, {"QuarterToDate", Int64.Type}, {"12MonthsRolling", Int64.Type}, {"CurrentYear", Int64.Type}, {"DateKey", Int64.Type}, {"MonthToDate", Int64.Type}})
 in
-    #"Inserted Start of Year"
+    #"Changed Type4"
